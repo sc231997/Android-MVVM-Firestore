@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">MVVM_Practice</string>
+    <string name="app_name">FraydioExoPlayer</string>
+    <string name="playback_channel_name">Playback</string>
+    <string name="download_channel_name">Download</string>
 </resources>
