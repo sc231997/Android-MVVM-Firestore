@@ -1,21 +1,19 @@
 package com.example.mvvm_practice;
 
-import androidx.appcompat.app.AppCompatActivity;
-
-import android.content.ComponentName;
-import android.content.Context;
-import android.content.Intent;
-import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.IBinder;
-import android.view.View;
 
-import com.example.mvvm_practice.service.AudioPlayerService;
-import com.google.android.exoplayer2.ExoPlayer;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProviders;
+
+import com.example.mvvm_practice.Model.Post;
+import com.example.mvvm_practice.ViewModel.AudioViewModel;
 import com.google.android.exoplayer2.ui.PlayerControlView;
+
+import java.util.ArrayList;
 
 public class AudioPlayerActivity extends AppCompatActivity {
 
+    ArrayList<Post> posts = new ArrayList<>();
     private PlayerControlView playerControlView;
 
     @Override
@@ -24,28 +22,13 @@ public class AudioPlayerActivity extends AppCompatActivity {
         setContentView(R.layout.activity_audio_player);
 
         playerControlView = findViewById(R.id.playerView);
-        startAudioService();
+
+        AudioViewModel viewModel = ViewModelProviders.of(this).get(AudioViewModel.class);
+
+        viewModel.getIsBound().observe(this, isBound -> {
+            playerControlView.setPlayer(viewModel.getPlayer());
+            viewModel.startAudioPlayerService();
+        });
     }
 
-    public void startAudioService() {
-        ServiceConnection connection = new ServiceConnection() {
-            private static final String TAG = "MainActivity";
-
-            @Override
-            public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-                AudioPlayerService.MyBinder binder = (AudioPlayerService.MyBinder)iBinder;
-                ExoPlayer player = binder.getExoPlayer();
-                playerControlView.setPlayer(player);
-            }
-
-            @Override
-            public void onServiceDisconnected(ComponentName componentName) {
-
-            }
-        };
-
-        Intent intent = new Intent(this, AudioPlayerService.class);
-//        Util.startForegroundService(this, intent);
-        bindService(intent, connection, Context.BIND_AUTO_CREATE);
-    }
 }
