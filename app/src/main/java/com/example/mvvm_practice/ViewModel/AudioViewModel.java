@@ -39,14 +39,14 @@ public class AudioViewModel extends AndroidViewModel {
 
         Post post = new Post();
         post.setTitle("Sample 1");
-        post.setImage("http://i.imgur.com/DvpvklR.png");
+        post.setImage("https://www.gstatic.com/webp/gallery3/2_webp_ll.webp");
         post.setArtist("Chandan");
         post.setAudio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3");
         posts.add(post);
 
         Post post1 = new Post();
         post1.setTitle("Sample 2");
-        post1.setImage("https://i.imgur.com/7w0rsh2.jpg");
+        post1.setImage("https://www.gstatic.com/webp/gallery3/1_webp_ll.webp");
         post1.setArtist("Singh");
         post1.setAudio("https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3");
         posts.add(post1);

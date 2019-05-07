@@ -10,11 +10,13 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
-import android.provider.MediaStore;
+import android.support.v4.media.MediaDescriptionCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 
+import com.bumptech.glide.Glide;
 import com.example.mvvm_practice.AudioPlayerActivity;
 import com.example.mvvm_practice.Model.Post;
 import com.example.mvvm_practice.R;
@@ -22,6 +24,8 @@ import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayerFactory;
 import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.ext.mediasession.MediaSessionConnector;
+import com.google.android.exoplayer2.ext.mediasession.TimelineQueueNavigator;
 import com.google.android.exoplayer2.source.ConcatenatingMediaSource;
 import com.google.android.exoplayer2.source.ExtractorMediaSource;
 import com.google.android.exoplayer2.source.MediaSource;
@@ -30,9 +34,10 @@ import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.google.android.exoplayer2.util.Util;
 
-import java.io.IOException;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutionException;
 
+import static com.example.mvvm_practice.C.MEDIA_SESSION_TAG;
 import static com.example.mvvm_practice.C.PLAYBACK_CHANNEL_ID;
 import static com.example.mvvm_practice.C.PLAYBACK_NOTIFICATION_ID;
 
@@ -40,9 +45,13 @@ public class AudioPlayerService extends Service {
     final MyBinder iBinder = new MyBinder();
     SimpleExoPlayer player;
     PlayerNotificationManager playerNotificationManager;
+    private MediaSessionCompat mediaSession;
+    private MediaSessionConnector mediaSessionConnector;
 
     @Override
     public void onDestroy() {
+        mediaSession.release();
+        mediaSessionConnector.setPlayer(null, null);
         playerNotificationManager.setPlayer(null);
 
         player.release();
@@ -119,15 +128,26 @@ public class AudioPlayerService extends Service {
                     @Nullable
                     @Override
                     public Bitmap getCurrentLargeIcon(Player player, PlayerNotificationManager.BitmapCallback callback) {
-                        Bitmap bitmap = null;
-                        try {
-                            bitmap = MediaStore.Images.Media.getBitmap(
-                                    context.getContentResolver(),
-                                    Uri.parse(posts.get(player.getCurrentWindowIndex()).getImage()));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return bitmap;
+                        final Bitmap[] bitmap = {null};
+
+                        Runnable runnable = () -> {
+                            try {
+                                bitmap[0] = Glide.with(context)
+                                        .asBitmap()
+                                        .load(Uri.parse(posts.get(player.getCurrentWindowIndex()).getImage()))
+                                        .submit().get();
+                                callback.onBitmap(bitmap[0]);
+                            } catch (ExecutionException e) {
+                                e.printStackTrace();
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        };
+
+                        Thread thread = new Thread(runnable);
+                        thread.start();
+
+                        return bitmap[0];
                     }
                 }
         );
@@ -148,6 +168,23 @@ public class AudioPlayerService extends Service {
 
         playerNotificationManager.setPlayer(player);
 
+        mediaSession = new MediaSessionCompat(context, MEDIA_SESSION_TAG);
+        mediaSession.setActive(true);
+        playerNotificationManager.setMediaSessionToken(mediaSession.getSessionToken());
+
+        mediaSessionConnector = new MediaSessionConnector(mediaSession);
+        mediaSessionConnector.setQueueNavigator(new TimelineQueueNavigator(mediaSession) {
+            @Override
+            public MediaDescriptionCompat getMediaDescription(Player player, int windowIndex) {
+                return new MediaDescriptionCompat.Builder()
+                        .setMediaId(String.valueOf(posts.indexOf(posts.get(windowIndex))))
+                        .setIconUri(Uri.parse(posts.get(windowIndex).getImage()))
+                        .setTitle(posts.get(windowIndex).getTitle())
+                        .setDescription(posts.get(windowIndex).getArtist())
+                        .build();
+            }
+        });
+        mediaSessionConnector.setPlayer(player, null);
         return iBinder;
     }
 
