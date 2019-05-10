@@ -128,26 +128,23 @@ public class AudioPlayerService extends Service {
                     @Nullable
                     @Override
                     public Bitmap getCurrentLargeIcon(Player player, PlayerNotificationManager.BitmapCallback callback) {
-                        final Bitmap[] bitmap = {null};
 
-                        Runnable runnable = () -> {
+                        Thread thread = new Thread(() -> {
                             try {
-                                bitmap[0] = Glide.with(context)
+                                Bitmap bitmap = Glide.with(context)
                                         .asBitmap()
                                         .load(Uri.parse(posts.get(player.getCurrentWindowIndex()).getImage()))
                                         .submit().get();
-                                callback.onBitmap(bitmap[0]);
+                                callback.onBitmap(bitmap);
                             } catch (ExecutionException e) {
                                 e.printStackTrace();
                             } catch (InterruptedException e) {
                                 e.printStackTrace();
                             }
-                        };
-
-                        Thread thread = new Thread(runnable);
+                        });
                         thread.start();
 
-                        return bitmap[0];
+                        return null;
                     }
                 }
         );
