@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
 
             }
         };
-//        bindService(intent, connection, BIND_AUTO_CREATE);
+        bindService(intent, connection, BIND_AUTO_CREATE);
 //        Util.startForegroundService(this,intent);
     }
 }
