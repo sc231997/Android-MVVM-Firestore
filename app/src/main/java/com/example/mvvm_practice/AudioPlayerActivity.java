@@ -5,15 +5,11 @@ import android.os.Bundle;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.lifecycle.ViewModelProviders;
 
-import com.example.mvvm_practice.Model.Post;
 import com.example.mvvm_practice.ViewModel.AudioViewModel;
 import com.google.android.exoplayer2.ui.PlayerControlView;
 
-import java.util.ArrayList;
-
 public class AudioPlayerActivity extends AppCompatActivity {
 
-    ArrayList<Post> posts = new ArrayList<>();
     private PlayerControlView playerControlView;
 
     @Override
@@ -24,10 +20,13 @@ public class AudioPlayerActivity extends AppCompatActivity {
         playerControlView = findViewById(R.id.playerView);
 
         AudioViewModel viewModel = ViewModelProviders.of(this).get(AudioViewModel.class);
-
+        viewModel.startAudioPlayerService();
         viewModel.getIsBound().observe(this, isBound -> {
-            playerControlView.setPlayer(viewModel.getPlayer());
-            viewModel.startAudioPlayerService();
+            if (isBound) {
+                playerControlView.setPlayer(viewModel.getPlayer());
+                viewModel.getPosts().observe(this, posts ->
+                        viewModel.startPlayer(posts.data(), 0));
+            }
         });
     }
 
